@@ -298,6 +298,23 @@ def _parse_github_owner_from_url(url: str) -> str | None:
     return None
 
 
+def _discussion_number_from_url(url: str) -> int | None:
+    # Expected: https://github.com/OWNER/REPO/discussions/123
+    try:
+        parsed = urllib.parse.urlparse(url)
+    except Exception:
+        return None
+
+    parts = [p for p in parsed.path.split("/") if p]
+    if len(parts) >= 4 and parts[2] == "discussions":
+        try:
+            n = int(parts[3])
+            return n if n > 0 else None
+        except Exception:
+            return None
+    return None
+
+
 def _render_discussion_body(plugin_name: str, meta: dict[str, Any], owner: str, repo: str) -> str:
     title = meta.get("title") if isinstance(meta.get("title"), str) else ""
     description = meta.get("description") if isinstance(meta.get("description"), str) else ""
@@ -462,6 +479,15 @@ def _update_discussion(discussion_id: str, title: str, body: str) -> None:
         _fail("Unexpected GraphQL response: missing discussion")
 
 
+def _update_discussion_rest(owner: str, repo: str, discussion_url: str, title: str, body: str) -> None:
+    number = _discussion_number_from_url(discussion_url)
+    if number is None:
+        _fail(f"Unable to parse discussion number from url: {discussion_url}")
+
+    api_url = f"https://api.github.com/repos/{owner}/{repo}/discussions/{number}"
+    _rest_request_json("PATCH", api_url, {"title": title, "body": body})
+
+
 def main() -> int:
     owner = os.environ.get("GITHUB_REPOSITORY_OWNER")
     repo_full = os.environ.get("GITHUB_REPOSITORY")
@@ -509,12 +535,13 @@ def main() -> int:
         if existing:
             disc_id = existing.get("id")
             closed = existing.get("closed")
+            existing_url = existing.get("url") if isinstance(existing.get("url"), str) else ""
             if isinstance(disc_id, str) and closed is True:
                 _reopen_discussion(disc_id)
 
-            if isinstance(disc_id, str) and disc_id:
+            if existing_url:
                 body = _render_discussion_body(plugin_name, meta, owner, repo)
-                _update_discussion(disc_id, expected_title, body)
+                _update_discussion_rest(owner, repo, existing_url, expected_title, body)
                 updated += 1
                 print(f"Updated: {plugin_name} -> {existing.get('url')}")
             else:
