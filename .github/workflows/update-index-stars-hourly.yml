@@ -25,7 +25,7 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Download index.json from latest Release
+      - name: Download index.json from tagged Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
           INDEX_RELEASE_TAG: generated-index
@@ -39,7 +39,7 @@ jobs:
         run: |
           python scripts/update_index_stars.py --mode scan
 
-      - name: Refresh index.json from latest Release
+      - name: Refresh index.json from tagged Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
           INDEX_RELEASE_TAG: generated-index

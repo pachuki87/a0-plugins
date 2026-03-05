@@ -25,7 +25,7 @@ def main() -> int:
     if args.max_plugins is not None:
         os.environ["MAX_PLUGINS"] = str(args.max_plugins)
 
-    registered_tasks = ["discussions"]
+    registered_tasks = ["index"]
 
     tasks = [t.strip() for t in args.tasks.split(",") if t.strip()]
     if not tasks:
@@ -33,10 +33,10 @@ def main() -> int:
 
     exit_code = 0
     for task in tasks:
-        if task == "discussions":
-            import ensure_plugin_discussions
+        if task in {"index", "discussions"}:
+            import generate_index
 
-            exit_code = max(exit_code, int(ensure_plugin_discussions.main()))
+            exit_code = max(exit_code, int(generate_index.main()))
             continue
         raise SystemExit(f"Unknown task: {task}")
 
