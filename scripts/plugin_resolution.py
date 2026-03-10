@@ -27,6 +27,10 @@ def is_valid_plugin_dirname(plugin_name: str) -> bool:
     return bool(PLUGIN_DIRNAME_PATTERN.fullmatch(plugin_name))
 
 
+def is_reserved_plugin_dirname(plugin_name: str) -> bool:
+    return plugin_name.startswith("_")
+
+
 def _is_zero_sha(sha: str | None) -> bool:
     if not sha:
         return True
@@ -59,7 +63,7 @@ def _normalize_plugin_names(names: list[str]) -> list[str]:
     filtered: list[str] = []
     skipped: list[str] = []
     for n in names:
-        if n and is_valid_plugin_dirname(n) and not n.startswith("_"):
+        if n and is_valid_plugin_dirname(n) and not is_reserved_plugin_dirname(n):
             filtered.append(n)
         else:
             skipped.append(n)
