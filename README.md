@@ -53,6 +53,7 @@ PRs are automatically checked for:
   - `title` max length: 50 characters
   - `description` max length: 500 characters
   - `github` must be a GitHub repository URL that exists and contains `plugin.yaml` at the repository root
+  - The plugin folder name in this index (for example `plugins/my_plugin/`) must exactly match the `name` field in the remote repository's root `plugin.yaml`
   - `tags` (if present) must be a list of strings, up to 5
   - `screenshots` (if present) must be a list of full image URLs, up to 5
 - **Thumbnail rules (optional)**
@@ -75,6 +76,8 @@ plugins/<your_plugin_name>/
   thumbnail.png|thumbnail.jpg|thumbnail.jpeg|thumbnail.webp   (optional)
 ```
 
+The folder name under `plugins/` is authoritative in this index and must exactly match the `name` in your remote repository's root `plugin.yaml`.
+
 ### `plugin.yaml` format
 
 See `plugins/_example1/plugin.yaml` for the reference format.
@@ -83,7 +86,7 @@ Required fields:
 
 - **`title`**: Human-readable plugin name
 - **`description`**: One-sentence description
-- **`github`**: URL of the plugin repository
+- **`github`**: URL of the plugin repository (its root `plugin.yaml` must include a `name` field that exactly matches your folder name in this index: `plugins/<your_plugin_name>/`)
 
 Optional fields:
 

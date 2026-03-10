@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 import re
@@ -97,7 +98,7 @@ def _read_plugin_yaml(plugin_name: str) -> dict[str, Any]:
     return cast(dict[str, Any], loaded)
 
 
-def _validate_fields(meta: dict[str, Any]) -> None:
+def _validate_fields(meta: dict[str, Any], plugin_name: str) -> None:
     keys = set(meta.keys())
     unknown = sorted(k for k in keys if k not in ALLOWED_FIELDS)
     if unknown:
@@ -113,7 +114,7 @@ def _validate_fields(meta: dict[str, Any]) -> None:
         _fail(f"title exceeds max length {TITLE_MAX_LEN}")
     if len(description.strip()) > DESCRIPTION_MAX_LEN:
         _fail(f"description exceeds max length {DESCRIPTION_MAX_LEN}")
-    _validate_github_repo(github)
+    _validate_github_repo(github, plugin_name)
 
     tags = meta.get("tags")
     if tags is not None:
@@ -256,7 +257,29 @@ def _validate_screenshot_urls(screenshots: Any) -> None:
         _validate_screenshot_url(screenshot)
 
 
-def _validate_github_repo(url: str) -> None:
+def _validate_remote_plugin_name(content_obj: dict[str, Any], plugin_name: str) -> None:
+    if content_obj.get("encoding") != "base64" or not isinstance(content_obj.get("content"), str):
+        _fail("unable to read remote plugin.yaml contents")
+    try:
+        encoded_content = cast(str, content_obj.get("content"))
+        decoded_bytes = base64.b64decode(encoded_content, validate=False)
+        decoded_text = decoded_bytes.decode("utf-8", errors="replace")
+    except Exception as e:
+        _fail(f"unable to decode remote plugin.yaml contents: {e}")
+    try:
+        remote_yaml = yaml.safe_load(decoded_text)
+    except Exception as e:
+        _fail(f"remote plugin.yaml is invalid YAML: {e}")
+    if not isinstance(remote_yaml, dict):
+        _fail("remote plugin.yaml must be a YAML mapping/object")
+    remote_name = remote_yaml.get("name")
+    if not isinstance(remote_name, str) or not remote_name.strip():
+        _fail("remote plugin.yaml must contain non-empty string field 'name'")
+    if remote_name != plugin_name:
+        _fail(f"remote plugin.yaml name must exactly match plugin folder name '{plugin_name}'")
+
+
+def _validate_github_repo(url: str, plugin_name: str) -> None:
     parsed = _parse_repo_url(url)
     if not parsed:
         _fail("github must be a valid GitHub repository URL")
@@ -267,6 +290,7 @@ def _validate_github_repo(url: str) -> None:
     content_obj = _request_json(f"https://api.github.com/repos/{owner}/{repo}/contents/plugin.yaml")
     if content_obj.get("type") != "file":
         _fail("github repository must contain plugin.yaml at repository root")
+    _validate_remote_plugin_name(content_obj, plugin_name)
 
 
 def _validate_thumbnail(plugin_dir: Path) -> None:
@@ -306,7 +330,7 @@ def main() -> int:
     if not plugin_dir.exists() or not plugin_dir.is_dir():
         _fail(f"Plugin directory does not exist in PR head: plugins/{plugin_name}")
     meta = _read_plugin_yaml(plugin_name)
-    _validate_fields(meta)
+    _validate_fields(meta, plugin_name)
     _validate_github_repo_not_in_index(plugin_name, cast(str, meta.get("github")))
     _validate_allowed_files(plugin_dir)
     _validate_thumbnail(plugin_dir)
