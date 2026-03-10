@@ -1,0 +1,7 @@
+title: AG-UI Provider
+description: Expose Agent Zero as an AG-UI compatible server. Any CopilotKit or AG-UI frontend connects via streaming SSE with built-in auth and rate limiting.
+github: https://github.com/protolabs42/agui-provider
+tags:
+  - api
+  - agents
+  - web
