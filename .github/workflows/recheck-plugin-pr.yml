@@ -1,0 +1,89 @@
+name: Recheck Plugin PR
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  recheck:
+    if: ${{ github.event.issue.pull_request }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create bot app token
+        id: bot-app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.A0_BOT_APP_ID }}
+          owner: ${{ github.repository_owner }}
+          repositories: |
+            a0-plugins
+          private-key: ${{ secrets.A0_BOT_PRIVATE_KEY }}
+
+      - name: Toggle recheck label on PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.bot-app-token.outputs.token }}
+          script: |
+            const commentBody = (context.payload.comment && context.payload.comment.body ? context.payload.comment.body : '').trim();
+            if (commentBody !== '/recheck') {
+              return;
+            }
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = context.issue.number;
+            const labelName = 'recheck';
+
+            try {
+              await github.rest.issues.getLabel({
+                owner,
+                repo,
+                name: labelName,
+              });
+            } catch (error) {
+              if (error.status !== 404) {
+                throw error;
+              }
+              await github.rest.issues.createLabel({
+                owner,
+                repo,
+                name: labelName,
+                color: 'ededed',
+              });
+            }
+
+            const existingLabels = await github.paginate(github.rest.issues.listLabelsOnIssue, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+
+            const hasLabel = existingLabels.some((label) => label.name === labelName);
+            if (hasLabel) {
+              await github.rest.issues.removeLabel({
+                owner,
+                repo,
+                issue_number,
+                name: labelName,
+              });
+            }
+
+            await github.rest.issues.addLabels({
+              owner,
+              repo,
+              issue_number,
+              labels: [labelName],
+            });
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number,
+              body: 'Re-running plugin validation.',
+            });
