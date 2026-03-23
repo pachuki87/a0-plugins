@@ -1,0 +1,11 @@
+title: Commands
+description: Markdown-backed slash commands for Agent Zero. Create, manage, and invoke reusable /commands from the chat composer, with scoped command files for global, project, and agent contexts, plus an included skill that can create or update command files for you.
+github: https://github.com/3clyp50/commands
+tags:
+  - prompting
+  - workflow
+  - tools
+  - files
+screenshots:
+  - https://raw.githubusercontent.com/3clyp50/commands/main/screenshots/1.png
+  - https://raw.githubusercontent.com/3clyp50/commands/main/screenshots/2.png
