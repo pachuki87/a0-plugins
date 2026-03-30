@@ -1,0 +1,12 @@
+title: AutoDream
+description: Reflective durable-memory maintenance on top of the builtin _memory plugin. Make your agent dream and remember your projects and goals.
+github: https://github.com/3clyp50/autodream
+tags:
+  - memory
+  - agents
+  - workflow
+screenshots:
+  - https://raw.githubusercontent.com/3clyp50/autodream/main/screenshots/01.png
+  - https://raw.githubusercontent.com/3clyp50/autodream/main/screenshots/02.png
+  - https://raw.githubusercontent.com/3clyp50/autodream/main/screenshots/03.png
+
